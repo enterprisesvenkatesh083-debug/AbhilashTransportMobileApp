@@ -40,7 +40,7 @@ class _HomeState extends State<Home> {
    final heads=['SR NO','DATE','VEHICLE NUMBER','FROM TIME','TO TIME','FROM KM','TO KM','TOTAL KM','BRIEF DETAILS OF JOURNEY','NAME OF USER','TOTAL HRS','EX. HRS','DRIVER'];
    sheet.appendRow(heads.map((e)=>TextCellValue(e)).toList());
    for(int i=0;i<trips.length;i++){final t=trips[i];sheet.appendRow([IntCellValue(i+1),TextCellValue(t.date),TextCellValue(t.vehicle),TextCellValue(t.fromTime),TextCellValue(t.toTime),DoubleCellValue(t.fromKm),DoubleCellValue(t.toKm),DoubleCellValue(t.km),TextCellValue(t.journey),TextCellValue(t.user),TextCellValue(t.totalHrs),TextCellValue(t.exHrs),TextCellValue(t.driver)]);}
-   for(int i=0;i<heads.length;i++){sheet.setColumnWidth(i,[9,14,20,12,12,12,12,12,38,22,12,12,20][i].toDouble());sheet.cell(CellIndex.indexByColumnRow(columnIndex:i,rowIndex:0)).cellStyle=CellStyle(bold:true,fontColor:ExcelColor.white,backgroundColor:ExcelColor.fromHexString('#174A78'));}
+   for(int i=0;i<heads.length;i++){sheet.setColumnWidth(i,[9,14,20,12,12,12,12,12,38,22,12,12,20][i].toDouble());sheet.cell(CellIndex.indexByColumnRow(columnIndex:i,rowIndex:0)).cellStyle=CellStyle(bold:true,fontColorHex:ExcelColor.white,backgroundColorHex:ExcelColor.fromHexString('#174A78'));}
    final bytes=excel.encode();if(bytes==null)throw Exception('Excel create failed');
    final dir=await getTemporaryDirectory();final name='ABHILASH_TRANSPORT_Logbook_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.xlsx';final file=File(p.join(dir.path,name));await file.writeAsBytes(bytes,flush:true);
    await Share.shareXFiles([XFile(file.path,mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',name:name)],subject:'ABHILASH TRANSPORT Logbook',text:'Vehicle logbook Excel report');
@@ -53,7 +53,7 @@ class _HomeState extends State<Home> {
    const Text('Share menu se WhatsApp, Email, Drive ya dusri app par Excel bhejein.',style:TextStyle(fontSize:12))
   ]))),
   if(trips.isEmpty)const Padding(padding:EdgeInsets.all(30),child:Center(child:Text('अभी कोई एंट्री नहीं है। New Entry दबाएँ।')))
-  else ...trips.map((t)=>Card(child:ListTile(title:Text('${t.date} • ${t.vehicle}',style:const TextStyle(fontWeight:FontWeight.bold)),subtitle:Text('${t.fromTime}–${t.toTime} | ${t.fromKm} → ${t.toKm} KM\n${t.journey}\nUser: ${t.user} • Driver: ${t.driver}'),isThreeLine:true,trailing:Text('${t.km.toStringAsFixed(0)} KM'))),
+  else ...trips.map((t)=>Card(child:ListTile(title:Text('${t.date} • ${t.vehicle}',style:const TextStyle(fontWeight:FontWeight.bold)),subtitle:Text('${t.fromTime}–${t.toTime} | ${t.fromKm} → ${t.toKm} KM\n${t.journey}\nUser: ${t.user} • Driver: ${t.driver}'),isThreeLine:true,trailing:Text('${t.km.toStringAsFixed(0)} KM')))),
   const SizedBox(height:80)
  ])));
 }
