@@ -1,0 +1,43 @@
+name: Build ABHILASH TRANSPORT APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ABHILASH_TRANSPORT_Mobile_App_Source (1)/AbhilashTransportMobileApp/**'
+      - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 'ABHILASH_TRANSPORT_Mobile_App_Source (1)/AbhilashTransportMobileApp'
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate Android platform files
+        run: flutter create --platforms=android --org com.abhilashtransport .
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: abhilash-transport-apk
+          path: 'ABHILASH_TRANSPORT_Mobile_App_Source (1)/AbhilashTransportMobileApp/build/app/outputs/flutter-apk/app-release.apk'
+          if-no-files-found: error
