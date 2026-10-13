@@ -87,7 +87,7 @@ class _EntryState extends State<Entry>{
   Row(children:[Expanded(child:field('Starting KM *',fromKm,type:const TextInputType.numberWithOptions(decimal:true))),const SizedBox(width:10),Expanded(child:field('Ending KM *',toKm,type:const TextInputType.numberWithOptions(decimal:true)))]),const SizedBox(height:8),
   Text('TOTAL KM: ${km?.toStringAsFixed(1)??'—'}',style:const TextStyle(fontWeight:FontWeight.bold,color:navy)),const SizedBox(height:12),
   field('Brief Details of Journey *',journey),const SizedBox(height:12),field('Name of User *',user),const SizedBox(height:12),field('Driver Name *',driver),const SizedBox(height:14),
-  Row(children:[Expanded(child:InputDecorator(decoration:const InputDecoration(labelText:'TOTAL HRS'),child:Text(totalHrs,style:const TextStyle(fontSize:22,fontWeight:FontWeight.bold)))),const SizedBox(width:10),Expanded(child:InputDecorator(decoration:const InputDecoration(labelText:'EX. HRS (AFTER 16 HRS)'),child:Text(exHrs,style:const TextStyle(fontSize:22,fontWeight:FontWeight.bold,color:Color(0xffb42318))))]),const SizedBox(height:20),
+  Row(children: [Expanded(child: InputDecorator(decoration: const InputDecoration(labelText: 'TOTAL HRS'), child: Text(totalHrs, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)))), const SizedBox(width: 10), Expanded(child: InputDecorator(decoration: const InputDecoration(labelText: 'EX. HRS (AFTER 16 HRS)'), child: Text(exHrs, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xffb42318))))) ]), const SizedBox(height: 20),
   FilledButton.icon(onPressed:saving?null:save,icon:const Icon(Icons.save),label:Text(saving?'Saving…':'Save Entry'))
  ])));
 }
