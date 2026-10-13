@@ -1,0 +1,14 @@
+APK BUILD GUIDE (NO FLUTTER INSTALLED ON THIS CHAT ENVIRONMENT)
+
+This ZIP contains Flutter source code; a compiled APK could not be built here because Flutter/Android build tools are not installed in this environment.
+
+Build online using GitHub Actions:
+1. Sign in/create a GitHub account at https://github.com/ .
+2. Create a new private repository named abhilash-transport-logbook.
+3. Upload all files/folders from this ZIP, including the hidden .github/workflows/build-apk.yml file, to the repository's main branch.
+4. Open the repository's Actions tab and select "Build Android APK".
+5. Click "Run workflow" and wait for the build to finish successfully.
+6. Open the completed workflow run. Under Artifacts, download "abhilash-transport-logbook-apk".
+7. Extract the downloaded artifact ZIP; it contains app-release.apk. Send this APK to the Android phone and install it.
+
+Note: Build errors, if any, will appear in the GitHub Actions logs and may require code fixes. This project saves entries locally on the phone; Excel is exported and shared manually through the Share button. It does not automatically sync to an office PC.
