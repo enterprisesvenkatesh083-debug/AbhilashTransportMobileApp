@@ -38,20 +38,31 @@ class _HomeState extends State<Home>{
  int mins(String s){final m=RegExp(r'^(\d+):(\d{2})$').firstMatch(s);return m==null?0:int.parse(m.group(1)!)*60+int.parse(m.group(2)!);}
  String sumHours(Iterable<String> values){final n=values.fold<int>(0,(s,v)=>s+mins(v));return '${n~/60}:${(n%60).toString().padLeft(2,'0')}';}
  Future<void> shareExcel() async {
-  if(trips.isEmpty){note('Please add a trip entry first.');return;}setState(()=>busy=true);
+  if(trips.isEmpty){note('Please add a trip entry first.');return;}
+  final range=await showDialog<Map<String,DateTime>>(context:context,builder:(ctx)=>const ExportRangeDialog());
+  if(range==null)return;
+  final from=range['start']!,to=range['end']!;
+  final selected=trips.where((t){final d=DateTime.tryParse(t.date);if(d==null)return false;final day=DateTime(d.year,d.month,d.day);return !day.isBefore(DateTime(from.year,from.month,from.day))&&!day.isAfter(DateTime(to.year,to.month,to.day));}).toList();
+  if(selected.isEmpty){note('No entries found for selected date range.');return;}
+  setState(()=>busy=true);
   try{
    final book=Excel.createExcel();final dash=book['Dashboard'];
-   dash.appendRow([TextCellValue('ABHILASH TRANSPORT')]);dash.appendRow([TextCellValue('VEHICLE LOGBOOK DASHBOARD')]);
+   dash.appendRow([TextCellValue('ABHILASH TRANSPORT')]);
+   dash.appendRow([TextCellValue('VEHICLE LOGBOOK DASHBOARD')]);
+   dash.appendRow([TextCellValue('Report Period'),TextCellValue('${DateFormat('dd-MM-yyyy').format(from)} to ${DateFormat('dd-MM-yyyy').format(to)}')]);
    dash.appendRow([TextCellValue('Report Generated'),TextCellValue(DateFormat('dd-MM-yyyy HH:mm').format(DateTime.now()))]);
-   dash.appendRow([TextCellValue('Total Trips'),IntCellValue(trips.length)]);
-   dash.appendRow([TextCellValue('Total KM'),DoubleCellValue(totalKm)]);
-   dash.appendRow([TextCellValue('TOTAL HRS'),TextCellValue(sumHours(trips.map((t)=>t.totalHrs)))]);
-   dash.appendRow([TextCellValue('EX. HRS'),TextCellValue(sumHours(trips.map((t)=>t.exHrs)))]);
-   dash.appendRow([TextCellValue('Extra Hours Rule'),TextCellValue('Extra hours calculated after 16 duty hours.')]);dash.setColumnWidth(0,28);dash.setColumnWidth(1,42);
-   final sheet=book['Vehicle Log'];const h=['SR NO','DATE','VEHICLE NUMBER','FROM TIME','TO TIME','FROM KM','TO KM','TOTAL KM','BRIEF DETAILS OF JOURNEY','NAME OF USER','TOTAL HRS','EX. HRS','DRIVER'];sheet.appendRow(h.map((x)=>TextCellValue(x)).toList());
-   for(var i=0;i<trips.length;i++){final t=trips[i];sheet.appendRow([IntCellValue(i+1),TextCellValue(t.date),TextCellValue(t.vehicle),TextCellValue(t.fromTime),TextCellValue(t.toTime),DoubleCellValue(t.fromKm),DoubleCellValue(t.toKm),DoubleCellValue(t.km),TextCellValue(t.journey),TextCellValue(t.user),TextCellValue(t.totalHrs),TextCellValue(t.exHrs),TextCellValue(t.driver)]);}
+   dash.appendRow([TextCellValue('Total Trips'),IntCellValue(selected.length)]);
+   dash.appendRow([TextCellValue('Total KM'),DoubleCellValue(selected.fold<double>(0,(sum,t)=>sum+t.km))]);
+   dash.appendRow([TextCellValue('TOTAL HRS'),TextCellValue(sumHours(selected.map((t)=>t.totalHrs)))]);
+   dash.appendRow([TextCellValue('EX. HRS'),TextCellValue(sumHours(selected.map((t)=>t.exHrs)))]);
+   dash.appendRow([TextCellValue('Extra Hours Rule'),TextCellValue('Extra hours calculated after 16 duty hours.')]);
+   dash.setColumnWidth(0,28);dash.setColumnWidth(1,42);
+   final sheet=book['Vehicle Log'];const h=['SR NO','DATE','VEHICLE NUMBER','FROM TIME','TO TIME','FROM KM','TO KM','TOTAL KM','BRIEF DETAILS OF JOURNEY','NAME OF USER','TOTAL HRS','EX. HRS','DRIVER'];
+   sheet.appendRow(h.map((x)=>TextCellValue(x)).toList());
+   for(var i=0;i<selected.length;i++){final t=selected[i];sheet.appendRow([IntCellValue(i+1),TextCellValue(t.date),TextCellValue(t.vehicle),TextCellValue(t.fromTime),TextCellValue(t.toTime),DoubleCellValue(t.fromKm),DoubleCellValue(t.toKm),DoubleCellValue(t.km),TextCellValue(t.journey),TextCellValue(t.user),TextCellValue(t.totalHrs),TextCellValue(t.exHrs),TextCellValue(t.driver)]);}
    for(var i=0;i<h.length;i++){sheet.setColumnWidth(i,[9,14,20,12,12,12,12,12,38,22,12,12,20][i].toDouble());}
-   final bytes=book.encode();if(bytes==null)throw Exception('Excel create failed');final dir=await getTemporaryDirectory();final name='ABHILASH_TRANSPORT_Logbook_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.xlsx';final file=File(p.join(dir.path,name));await file.writeAsBytes(bytes,flush:true);
+   final bytes=book.encode();if(bytes==null)throw Exception('Excel create failed');
+   final dir=await getTemporaryDirectory();final name='ABHILASH_TRANSPORT_Logbook_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.xlsx';final file=File(p.join(dir.path,name));await file.writeAsBytes(bytes,flush:true);
    await Share.shareXFiles([XFile(file.path,mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',name:name)],subject:'ABHILASH TRANSPORT Logbook',text:'Vehicle logbook Excel report');
   }catch(e){note('Excel export failed: $e');}finally{if(mounted)setState(()=>busy=false);}
  }
@@ -61,7 +72,7 @@ class _HomeState extends State<Home>{
   GridView.count(shrinkWrap:true,physics:const NeverScrollableScrollPhysics(),crossAxisCount:2,childAspectRatio:1.6,children:[tile('Total Trips','${trips.length}',Icons.directions_car,const Color(0xffe3efff)),tile('Total KM',totalKm.toStringAsFixed(1),Icons.route,const Color(0xffdff7e9)),tile('TOTAL HRS',sumHours(trips.map((t)=>t.totalHrs)),Icons.schedule,const Color(0xfffff0d4)),tile('EX. HRS',sumHours(trips.map((t)=>t.exHrs)),Icons.more_time,const Color(0xffffe4e4))]),
   const Text('Recent Trips',style:TextStyle(fontSize:19,fontWeight:FontWeight.bold,color:navy)),
   if(trips.isEmpty)const Card(child:Padding(padding:EdgeInsets.all(24),child:Text('No trips yet. Tap New Entry to begin.')))
-  else ...trips.take(10).map((t)=>Card(child:ListTile(leading:const Icon(Icons.directions_car,color:navy),title:Text('${t.vehicle} • ${t.date}'),subtitle:Text('${t.fromTime} → ${t.toTime}\\nTOTAL HRS ${t.totalHrs} | EX. HRS ${t.exHrs}\\n${t.journey}'),isThreeLine:true,trailing: PopupMenuButton<String>(itemBuilder: (_) => const [PopupMenuItem(value: 'edit', child: Text('Edit')), PopupMenuItem(value: 'delete', child: Text('Delete'))], onSelected: (v) async { if (v == 'edit') { final ok = await Navigator.push<bool>(c, MaterialPageRoute(builder: (_) => Entry(existing: t))); if (ok == true) refresh(); } else if (v == 'delete' && t.id != null) { await DB.instance.deleteTrip(t.id!); refresh(); } }, child: Text('${t.km.toStringAsFixed(0)} KM'))))),
+  else ...trips.take(10).map((t)=>Card(child:ListTile(leading:const Icon(Icons.directions_car,color:navy),title:Text('${t.vehicle} • ${t.date}'),subtitle:Text('${t.fromTime} → ${t.toTime}\\nTOTAL HRS ${t.totalHrs} | EX. HRS ${t.exHrs}\\n${t.journey}'),isThreeLine:true,trailing: SizedBox(width:76,child:Column(mainAxisSize:MainAxisSize.min,children:[Text('${t.km.toStringAsFixed(0)} KM',style:const TextStyle(fontWeight:FontWeight.bold)),Row(mainAxisSize:MainAxisSize.min,children:[IconButton(tooltip:'Edit trip',visualDensity:VisualDensity.compact,constraints:const BoxConstraints(minWidth:32,minHeight:32),padding:EdgeInsets.zero,icon:const Icon(Icons.edit,size:18),onPressed:()async{final ok=await Navigator.push<bool>(c,MaterialPageRoute(builder:(_)=>Entry(existing:t)));if(ok==true)refresh();}),IconButton(tooltip:'Delete trip',visualDensity:VisualDensity.compact,constraints:const BoxConstraints(minWidth:32,minHeight:32),padding:EdgeInsets.zero,icon:const Icon(Icons.delete_outline,size:18,color:Colors.red),onPressed:()async{final yes=await showDialog<bool>(context:c,builder:(ctx)=>AlertDialog(title:const Text('Delete trip?'),content:const Text('This trip entry will be permanently deleted.'),actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('Cancel')),FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('Delete'))]));if(yes==true&&t.id!=null){await DB.instance.deleteTrip(t.id!);refresh();}}})])]))))),
   FilledButton.icon(onPressed:busy?null:shareExcel,icon:const Icon(Icons.share),label:Text(busy?'Preparing Excel…':'Export & Share Excel')),
   const Center(child:Text('Excel includes Dashboard and Vehicle Log sheets',style:TextStyle(fontSize:12)))
  ])));
@@ -93,4 +104,26 @@ class _EntryState extends State<Entry>{
   Row(children: [Expanded(child: InputDecorator(decoration: const InputDecoration(labelText: 'TOTAL HRS'), child: Text(totalHrs, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)))), const SizedBox(width: 10), Expanded(child: InputDecorator(decoration: const InputDecoration(labelText: 'EX. HRS (AFTER 16 HRS)'), child: Text(exHrs, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xffb42318))))) ]), const SizedBox(height: 20),
   FilledButton.icon(onPressed:saving?null:save,icon:const Icon(Icons.save),label:Text(saving?'Saving…':(widget.existing==null?'Save Entry':'Update Entry')))
  ])));
+}
+
+class ExportRangeDialog extends StatefulWidget {
+ const ExportRangeDialog({super.key});
+ @override State<ExportRangeDialog> createState()=>_ExportRangeDialogState();
+}
+class _ExportRangeDialogState extends State<ExportRangeDialog>{
+ String mode='Day Wise';DateTime chosen=DateTime.now(),start=DateTime.now(),end=DateTime.now();
+ Future<void> pickDate({required bool isStart}) async {
+  final picked=await showDatePicker(context:context,initialDate:mode=='Custom Date Range'?(isStart?start:end):chosen,firstDate:DateTime(2020),lastDate:DateTime(2100));
+  if(picked!=null)setState((){if(mode=='Custom Date Range'){if(isStart){start=picked;}else{end=picked;}}else{chosen=picked;}});
+ }
+ @override Widget build(BuildContext context)=>AlertDialog(title:const Text('Export & Share Excel'),content:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
+  const Text('Choose which entries to export'),const SizedBox(height:12),
+  DropdownButtonFormField<String>(value:mode,decoration:const InputDecoration(labelText:'Export option',border:OutlineInputBorder()),items:const [DropdownMenuItem(value:'Day Wise',child:Text('Day Wise')),DropdownMenuItem(value:'Month Wise',child:Text('Month Wise')),DropdownMenuItem(value:'Custom Date Range',child:Text('Custom Date Range'))],onChanged:(v){if(v!=null)setState(()=>mode=v);}),
+  const SizedBox(height:8),
+  if(mode!='Custom Date Range')ListTile(contentPadding:EdgeInsets.zero,title:Text(mode=='Day Wise'?'Select Date':'Select Month'),subtitle:Text(mode=='Day Wise'?DateFormat('dd-MM-yyyy').format(chosen):DateFormat('MMMM yyyy').format(chosen)),trailing:const Icon(Icons.calendar_month),onTap:()=>pickDate(isStart:true)),
+  if(mode=='Custom Date Range')...[
+   ListTile(contentPadding:EdgeInsets.zero,title:const Text('From Date'),subtitle:Text(DateFormat('dd-MM-yyyy').format(start)),trailing:const Icon(Icons.calendar_month),onTap:()=>pickDate(isStart:true)),
+   ListTile(contentPadding:EdgeInsets.zero,title:const Text('To Date'),subtitle:Text(DateFormat('dd-MM-yyyy').format(end)),trailing:const Icon(Icons.calendar_month),onTap:()=>pickDate(isStart:false)),
+  ],
+]),actions:[TextButton(onPressed:()=>Navigator.pop(context),child:const Text('Cancel')),FilledButton(onPressed:(){late DateTime a,b;if(mode=='Day Wise'){a=chosen;b=chosen;}else if(mode=='Month Wise'){a=DateTime(chosen.year,chosen.month,1);b=DateTime(chosen.year,chosen.month+1,0);}else{a=start;b=end;if(b.isBefore(a)){final temp=a;a=b;b=temp;}}Navigator.pop(context,{'start':a,'end':b});},child:const Text('Export Excel'))]);
 }
