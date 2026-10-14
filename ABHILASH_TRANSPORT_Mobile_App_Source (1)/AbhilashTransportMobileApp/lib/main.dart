@@ -72,7 +72,21 @@ class _HomeState extends State<Home>{
   GridView.count(shrinkWrap:true,physics:const NeverScrollableScrollPhysics(),crossAxisCount:2,childAspectRatio:1.6,children:[tile('Total Trips','${trips.length}',Icons.directions_car,const Color(0xffe3efff)),tile('Total KM',totalKm.toStringAsFixed(1),Icons.route,const Color(0xffdff7e9)),tile('TOTAL HRS',sumHours(trips.map((t)=>t.totalHrs)),Icons.schedule,const Color(0xfffff0d4)),tile('EX. HRS',sumHours(trips.map((t)=>t.exHrs)),Icons.more_time,const Color(0xffffe4e4))]),
   const Text('Recent Trips',style:TextStyle(fontSize:19,fontWeight:FontWeight.bold,color:navy)),
   if(trips.isEmpty)const Card(child:Padding(padding:EdgeInsets.all(24),child:Text('No trips yet. Tap New Entry to begin.')))
-  else ...trips.take(10).map((t)=>Card(child:ListTile(leading:const Icon(Icons.directions_car,color:navy),title:Text('${t.vehicle} • ${t.date}'),subtitle:Text('${t.fromTime} → ${t.toTime}\\nTOTAL HRS ${t.totalHrs} | EX. HRS ${t.exHrs}\\n${t.journey}'),isThreeLine:true,trailing: SizedBox(width:76,child:Column(mainAxisSize:MainAxisSize.min,children:[Text('${t.km.toStringAsFixed(0)} KM',style:const TextStyle(fontWeight:FontWeight.bold)),Row(mainAxisSize:MainAxisSize.min,children:[IconButton(tooltip:'Edit trip',visualDensity:VisualDensity.compact,constraints:const BoxConstraints(minWidth:32,minHeight:32),padding:EdgeInsets.zero,icon:const Icon(Icons.edit,size:18),onPressed:()async{final ok=await Navigator.push<bool>(c,MaterialPageRoute(builder:(_)=>Entry(existing:t)));if(ok==true)refresh();}),IconButton(tooltip:'Delete trip',visualDensity:VisualDensity.compact,constraints:const BoxConstraints(minWidth:32,minHeight:32),padding:EdgeInsets.zero,icon:const Icon(Icons.delete_outline,size:18,color:Colors.red),onPressed:()async{final yes=await showDialog<bool>(context:c,builder:(ctx)=>AlertDialog(title:const Text('Delete trip?'),content:const Text('This trip entry will be permanently deleted.'),actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('Cancel')),FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('Delete'))]));if(yes==true&&t.id!=null){await DB.instance.deleteTrip(t.id!);refresh();}}})])]))))),
+   else ...trips.take(10).map((t)=>Card(
+    child:ListTile(
+     leading:const Icon(Icons.directions_car,color:navy),
+     title:Text('${t.vehicle} • ${t.date}'),
+     subtitle:Text('${t.fromTime} → ${t.toTime}\\nTOTAL HRS ${t.totalHrs} | EX. HRS ${t.exHrs}\\n${t.journey}'),
+     isThreeLine:true,
+     trailing:SizedBox(width:84,child:Column(mainAxisSize:MainAxisSize.min,children:[
+      Text('${t.km.toStringAsFixed(0)} KM',style:const TextStyle(fontWeight:FontWeight.bold)),
+      Row(mainAxisSize:MainAxisSize.min,children:[
+       IconButton(tooltip:'Edit trip',visualDensity:VisualDensity.compact,constraints:const BoxConstraints(minWidth:32,minHeight:32),padding:EdgeInsets.zero,icon:const Icon(Icons.edit,size:18),onPressed:()async{final ok=await Navigator.push<bool>(c,MaterialPageRoute(builder:(_)=>Entry(existing:t)));if(ok==true)refresh();}),
+       IconButton(tooltip:'Delete trip',visualDensity:VisualDensity.compact,constraints:const BoxConstraints(minWidth:32,minHeight:32),padding:EdgeInsets.zero,icon:const Icon(Icons.delete_outline,size:18,color:Colors.red),onPressed:()async{final yes=await showDialog<bool>(context:c,builder:(ctx)=>AlertDialog(title:const Text('Delete trip?'),content:const Text('This trip entry will be permanently deleted.'),actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('Cancel')),FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('Delete'))]));if(yes==true&&t.id!=null){await DB.instance.deleteTrip(t.id!);refresh();}})
+      ])
+     ]))
+    )
+   )),
   FilledButton.icon(onPressed:busy?null:shareExcel,icon:const Icon(Icons.share),label:Text(busy?'Preparing Excel…':'Export & Share Excel')),
   const Center(child:Text('Excel includes Dashboard and Vehicle Log sheets',style:TextStyle(fontSize:12)))
  ])));
